@@ -67,6 +67,10 @@ st.subheader("📈 Taux de conversion")
 col5, col6 = st.columns(2)
 col5.metric("Qualification → Offre", f"{(nb_offres / nb_qualifies * 100):.1f} %" if nb_qualifies else "N/A")
 col6.metric("Offre → PDB", f"{(nb_pdb / nb_offres * 100):.1f} %" if nb_offres else "N/A")
+# --- TAUX GLOBAL D'ABANDON ---
+taux_global_abandon = round((nb_abandons / nb_leads) * 100, 2) if nb_leads else 0
+st.subheader("💥 Taux global d’abandon")
+st.markdown(f"<h2 style='color:red;'>{taux_global_abandon} %</h2>", unsafe_allow_html=True)
 
 # --- TAUX D'ABANDON PAR ÉTAPE ---
 st.subheader("❌ Taux d'abandons par étape")
