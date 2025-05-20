@@ -2,90 +2,81 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# Configuration de la page
 st.set_page_config(page_title="Dashboard Salons", layout="wide")
 
-with st.container():
-    st.markdown("<div style='max-width: 700px; margin:400px;'>", unsafe_allow_html=True)
-    st.title("🎯 Tableau de bord des Salons")
+# Charger les données
+df = pd.read_csv("salon_ok.csv")
 
-    # Chargement des données
-    df = pd.read_csv("salon_ok.csv")
+# --- ENTÊTE ---
+st.markdown("# 🎯 Dashboard des Salons")
+st.markdown("Un aperçu clair de l’évolution des leads par événement.")
 
-    # === Sélection des salons ===
-    st.subheader("🎯 Sélection des salons")
-    evenements = sorted(df["evenement"].dropna().unique())
+# --- Sélection salons ---
+st.subheader("🗂️ Filtres")
+evenements = sorted(df["evenement"].dropna().unique())
+col_left, col_right = st.columns([1, 5])
+with col_left:
     all_selected = st.checkbox("Tout sélectionner", value=True)
 
-    if all_selected:
-        selection = st.multiselect("Salons sélectionnés :", evenements, default=evenements)
-    else:
-        selection = st.multiselect("Salons sélectionnés :", evenements)
+if all_selected:
+    selected = st.multiselect("Choisir les salons :", evenements, default=evenements)
+else:
+    selected = st.multiselect("Choisir les salons :", evenements)
 
-    data = df[df["evenement"].isin(selection)]
+filtered_df = df[df["evenement"].isin(selected)]
 
-    # === Calculs statistiques ===
-    nb_leads = data["id_lead"].nunique()
-    nb_abandons = data["Date_Abandon"].notna().sum()
-    nb_offres = data["Date_signature_offre"].notna().sum()
-    nb_pdb = data["Date_signature_pdb"].notna().sum()
-    nb_qualifies = data["Date_qualification"].notna().sum()
+# --- CALCULS ---
+nb_leads = filtered_df["id_lead"].nunique()
+nb_abandons = filtered_df["Date_Abandon"].notna().sum()
+nb_offres = filtered_df["Date_signature_offre"].notna().sum()
+nb_pdb = filtered_df["Date_signature_pdb"].notna().sum()
+nb_qualifies = filtered_df["Date_qualification"].notna().sum()
 
-    p_leads = data["PuissanceTotale"].sum()
-    p_abandons = data.loc[data["Date_Abandon"].notna(), "PuissanceTotale"].sum()
-    p_offres = data.loc[data["Date_signature_offre"].notna(), "PuissanceTotale"].sum()
-    p_pdb = data.loc[data["Date_signature_pdb"].notna(), "PuissanceTotale"].sum()
+p_leads = filtered_df["PuissanceTotale"].sum()
+p_abandons = filtered_df.loc[filtered_df["Date_Abandon"].notna(), "PuissanceTotale"].sum()
+p_offres = filtered_df.loc[filtered_df["Date_signature_offre"].notna(), "PuissanceTotale"].sum()
+p_pdb = filtered_df.loc[filtered_df["Date_signature_pdb"].notna(), "PuissanceTotale"].sum()
 
-    # === Affichage des KPI ===
-    st.subheader("🔢 Statistiques principales")
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Nombre de Leads", nb_leads, f"{p_leads:.2f} kW")
-    col2.metric("Abandons", nb_abandons, f"{p_abandons:.2f} kW")
-    col3.metric("Offres signées", nb_offres, f"{p_offres:.2f} kW")
-    col4.metric("PDB signées", nb_pdb, f"{p_pdb:.2f} kW")
+# --- STATS GLOBALES ---
+st.subheader("📊 Indicateurs principaux")
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("Leads", nb_leads, f"{p_leads:.1f} kW")
+col2.metric("Abandons", nb_abandons, f"{p_abandons:.1f} kW")
+col3.metric("Offres signées", nb_offres, f"{p_offres:.1f} kW")
+col4.metric("PDB signées", nb_pdb, f"{p_pdb:.1f} kW")
 
-    # === Diagramme circulaire ===
-    statuts = {
-        "Offre signée": nb_offres,
-        "PDB signée": nb_pdb,
-        "Site Qualifiée": nb_qualifies,
-        "Opportunité Abandonnée": nb_abandons
-    }
+# --- DONUT CHART ---
+st.subheader("🧩 Répartition des statuts")
+status_counts = {
+    "Site Qualifiée": nb_qualifies,
+    "Offre signée": nb_offres,
+    "PDB signée": nb_pdb,
+    "Abandonnée": nb_abandons
+}
+status_df = pd.DataFrame({
+    "Statut": list(status_counts.keys()),
+    "Valeur": list(status_counts.values())
+})
 
-    df_statuts = pd.DataFrame({
-        "Statut": list(statuts.keys()),
-        "Nombre": list(statuts.values())
-    })
+fig = px.pie(status_df, names="Statut", values="Valeur", hole=0.4,
+             color_discrete_sequence=px.colors.qualitative.Set3)
+st.plotly_chart(fig, use_container_width=True)
 
-    st.subheader("📊 Statut des leads")
-    fig = px.pie(df_statuts, names="Statut", values="Nombre", hole=0.5,
-                 color_discrete_sequence=px.colors.qualitative.Bold)
-    st.plotly_chart(fig, use_container_width=True)
+# --- TAUX DE CONVERSION ---
+st.subheader("📈 Taux de conversion")
+col5, col6 = st.columns(2)
+col5.metric("Qualification → Offre", f"{(nb_offres / nb_qualifies * 100):.1f} %" if nb_qualifies else "N/A")
+col6.metric("Offre → PDB", f"{(nb_pdb / nb_offres * 100):.1f} %" if nb_offres else "N/A")
 
-    # === Taux de conversion classiques ===
-    taux_q_to_o = round((nb_offres / nb_qualifies) * 100, 2) if nb_qualifies else 0
-    taux_o_to_pdb = round((nb_pdb / nb_offres) * 100, 2) if nb_offres else 0
+# --- TAUX D'ABANDON PAR ÉTAPE ---
+st.subheader("❌ Taux d'abandons par étape")
+col7, col8, col9, col10 = st.columns(4)
+col7.metric("Abandon / Leads", f"{(nb_abandons / nb_leads * 100):.1f} %" if nb_leads else "N/A")
+col8.metric("Abandon / Qualifiés", f"{(nb_abandons / nb_qualifies * 100):.1f} %" if nb_qualifies else "N/A")
+col9.metric("Abandon / Offres", f"{(nb_abandons / nb_offres * 100):.1f} %" if nb_offres else "N/A")
+col10.metric("Abandon / PDB", f"{(nb_abandons / nb_pdb * 100):.1f} %" if nb_pdb else "N/A")
 
-    st.subheader("📈 Taux de conversion")
-    col5, col6 = st.columns(2)
-    col5.metric("Qualification → Offre", f"{taux_q_to_o} %")
-    col6.metric("Offre → PDB", f"{taux_o_to_pdb} %")
+# --- DONNÉES ---
+with st.expander("🔍 Voir les données filtrées"):
+    st.dataframe(filtered_df)
 
-    # === Taux d'abandons à chaque étape ===
-    taux_ab_leads = round((nb_abandons / nb_leads) * 100, 2) if nb_leads else 0
-    taux_ab_qualif = round((nb_abandons / nb_qualifies) * 100, 2) if nb_qualifies else 0
-    taux_ab_offres = round((nb_abandons / nb_offres) * 100, 2) if nb_offres else 0
-    taux_ab_pdb = round((nb_abandons / nb_pdb) * 100, 2) if nb_pdb else 0
-
-    st.subheader("❌ Taux d'abandons par étape")
-    col7, col8, col9, col10 = st.columns(4)
-    col7.metric("Abandons / Leads", f"{taux_ab_leads} %")
-    col8.metric("Abandons / Qualifiés", f"{taux_ab_qualif} %")
-    col9.metric("Abandons / Offres", f"{taux_ab_offres} %")
-    col10.metric("Abandons / PDB", f"{taux_ab_pdb} %")
-
-    # === Tableau des données ===
-    with st.expander("🔍 Voir les données filtrées"):
-        st.dataframe(data)
-
-    st.markdown("</div>", unsafe_allow_html=True)
