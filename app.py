@@ -6,7 +6,7 @@ import plotly.express as px
 st.set_page_config(page_title="Dashboard Salons", layout="wide")
 
 with st.container():
-    st.markdown("<div style='max-width: 700px; margin: auto;'>", unsafe_allow_html=True)
+    st.markdown("<div style='max-width: 700px; margin:400px;'>", unsafe_allow_html=True)
     st.title("🎯 Tableau de bord des Salons")
 
     # Chargement des données
