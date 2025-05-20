@@ -104,6 +104,45 @@ top_motifs.columns = ['Motif', 'Nombre']
 # Affichage sous forme de tableau
 st.table(top_motifs)
 
+import pydeck as pdk
+
+st.subheader("🗺️ Carte des sites avec ou sans PDB signée")
+
+# Nettoyage : on garde les lignes avec coordonnées valides
+df_map = filtered_df.dropna(subset=["latitude", "longitude"])
+
+# Ajouter une colonne "couleur"
+# Rouge si PDB signée, bleu sinon
+df_map["color"] = df_map["Date_signature_pdb"].apply(
+    lambda x: [255, 0, 0] if pd.notna(x) else [0, 128, 255]
+)
+
+# Création de la couche de points
+layer = pdk.Layer(
+    "ScatterplotLayer",
+    data=df_map,
+    get_position='[longitude, latitude]',
+    get_color="color",
+    get_radius=100,
+    pickable=True,
+)
+
+# Vue centrée automatiquement (ou définir un centre fixe si tu veux)
+if not df_map.empty:
+    center_lat = df_map["latitude"].mean()
+    center_lon = df_map["longitude"].mean()
+else:
+    center_lat, center_lon = 46.603354, 1.888334  # Centre géographique de la France
+
+# Création de la carte
+view_state = pdk.ViewState(
+    latitude=center_lat,
+    longitude=center_lon,
+    zoom=5.5,
+    pitch=0,
+)
+
+st.pydeck_chart(pdk.Deck(layers=[layer], initial_view_state=view_state))
 
 
 # --- DONNÉES ---
