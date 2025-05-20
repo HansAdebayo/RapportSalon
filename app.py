@@ -80,7 +80,7 @@ st.subheader("❌ Taux d'abandons par phase")
 abandons_phase = filtered_df[filtered_df["Date_Abandon"].notna()]["Derniere_Phase_Avant_Abandon"].value_counts()
 
 # On ne garde que les phases souhaitées
-phases_utiles = ["Leads", "Complétude Du Dossier", "Qualification", "Offre", "PDB"]
+phases_utiles = ["Complétude Du Dossier", "Qualification", "Offre"]
 taux_abandon_par_phase = {
     phase: round((abandons_phase.get(phase, 0) / nb_leads * 100), 1) if nb_leads else 0
     for phase in phases_utiles
