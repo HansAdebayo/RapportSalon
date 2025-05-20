@@ -8,11 +8,11 @@ st.set_page_config(page_title="Dashboard Salons", layout="centered")
 df = pd.read_csv("salon_ok.csv")
 
 # --- ENTÊTE ---
-st.markdown("# 🎯 Dashboard des Salons")
+st.markdown("#Dashboard des Salons")
 st.markdown("Un aperçu clair de l’évolution des leads par événement.")
 
 # --- Sélection salons ---
-st.subheader("🗂️ Filtres")
+st.subheader("Filtres")
 evenements = sorted(df["evenement"].dropna().unique())
 col_left, col_right = st.columns([1, 5])
 with col_left:
@@ -90,6 +90,20 @@ taux_abandon_par_phase = {
 cols = st.columns(len(phases_utiles))
 for i, phase in enumerate(phases_utiles):
     cols[i].metric(f"Abandon après {phase}", f"{taux_abandon_par_phase[phase]} %")
+
+
+st.subheader("Top 10 des motifs d'abandon")
+
+# Extraire les motifs non nuls
+motifs = filtered_df[filtered_df['Date_Abandon'].notna()]['wattetco_commentairemotifdabandon']
+
+# Compter les occurrences
+top_motifs = motifs.value_counts().head(10).reset_index()
+top_motifs.columns = ['Motif', 'Nombre']
+
+# Affichage sous forme de tableau
+st.table(top_motifs)
+
 
 
 # --- DONNÉES ---
