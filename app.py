@@ -6,7 +6,7 @@ import plotly.express as px
 st.set_page_config(page_title="Dashboard Salons", layout="wide")
 
 with st.container():
-    st.markdown("<div style='max-width: 1200px; margin: auto;'>", unsafe_allow_html=True)
+    st.markdown("<div style='max-width: 1000px; margin: auto;'>", unsafe_allow_html=True)
     st.title("🎯 Tableau de bord des Salons")
 
     # Chargement des données
@@ -62,18 +62,27 @@ with st.container():
                  color_discrete_sequence=px.colors.qualitative.Bold)
     st.plotly_chart(fig, use_container_width=True)
 
-    # === Taux de conversion ===
+    # === Taux de conversion classiques ===
     taux_q_to_o = round((nb_offres / nb_qualifies) * 100, 2) if nb_qualifies else 0
     taux_o_to_pdb = round((nb_pdb / nb_offres) * 100, 2) if nb_offres else 0
-    taux_abandon = round((nb_abandons / nb_leads) * 100, 2) if nb_leads else 0
-    taux_pdb_leads = round((nb_pdb / nb_leads) * 100, 2) if nb_leads else 0
 
     st.subheader("📈 Taux de conversion")
-    col5, col6, col7, col8 = st.columns(4)
+    col5, col6 = st.columns(2)
     col5.metric("Qualification → Offre", f"{taux_q_to_o} %")
     col6.metric("Offre → PDB", f"{taux_o_to_pdb} %")
-    col7.metric("Abandons / Leads", f"{taux_abandon} %")
-    col8.metric("PDB / Leads", f"{taux_pdb_leads} %")
+
+    # === Taux d'abandons à chaque étape ===
+    taux_ab_leads = round((nb_abandons / nb_leads) * 100, 2) if nb_leads else 0
+    taux_ab_qualif = round((nb_abandons / nb_qualifies) * 100, 2) if nb_qualifies else 0
+    taux_ab_offres = round((nb_abandons / nb_offres) * 100, 2) if nb_offres else 0
+    taux_ab_pdb = round((nb_abandons / nb_pdb) * 100, 2) if nb_pdb else 0
+
+    st.subheader("❌ Taux d'abandons par étape")
+    col7, col8, col9, col10 = st.columns(4)
+    col7.metric("Abandons / Leads", f"{taux_ab_leads} %")
+    col8.metric("Abandons / Qualifiés", f"{taux_ab_qualif} %")
+    col9.metric("Abandons / Offres", f"{taux_ab_offres} %")
+    col10.metric("Abandons / PDB", f"{taux_ab_pdb} %")
 
     # === Tableau des données ===
     with st.expander("🔍 Voir les données filtrées"):
