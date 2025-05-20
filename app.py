@@ -74,13 +74,23 @@ taux_global_abandon = round((nb_abandons / nb_leads) * 100, 2) if nb_leads else 
 col_abandon.metric("Taux global d’abandon", f"{taux_global_abandon} %")
 
 
-# --- TAUX D'ABANDON PAR ÉTAPE ---
-st.subheader("❌ Taux d'abandons par étape")
-col7, col8, col9, col10 = st.columns(4)
-col7.metric("Abandon / Leads", f"{(nb_abandons / nb_leads * 100):.1f} %" if nb_leads else "N/A")
-col8.metric("Abandon / Qualifiés", f"{(nb_abandons / nb_qualifies * 100):.1f} %" if nb_qualifies else "N/A")
-col9.metric("Abandon / Offres", f"{(nb_abandons / nb_offres * 100):.1f} %" if nb_offres else "N/A")
-col10.metric("Abandon / PDB", f"{(nb_abandons / nb_pdb * 100):.1f} %" if nb_pdb else "N/A")
+st.subheader("❌ Taux d'abandons par phase")
+
+# Taux généraux calculés sur Derniere_Phase_Avant_Abandon
+abandons_phase = filtered_df[filtered_df["Date_Abandon"].notna()]["Derniere_Phase_Avant_Abandon"].value_counts()
+
+# On ne garde que les phases souhaitées
+phases_utiles = ["Leads", "Complétude Du Dossier", "Qualification", "Offre", "PDB"]
+taux_abandon_par_phase = {
+    phase: round((abandons_phase.get(phase, 0) / nb_leads * 100), 1) if nb_leads else 0
+    for phase in phases_utiles
+}
+
+# Affichage dynamique en colonnes
+cols = st.columns(len(phases_utiles))
+for i, phase in enumerate(phases_utiles):
+    cols[i].metric(f"Abandon après {phase}", f"{taux_abandon_par_phase[phase]} %")
+
 
 # --- DONNÉES ---
 with st.expander("🔍 Voir les données filtrées"):
